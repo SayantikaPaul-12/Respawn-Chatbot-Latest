@@ -12,7 +12,7 @@ set -euo pipefail
 #   AMPLIFY_BRANCH (default: main)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INFRA_DIR="${ROOT_DIR}/infrastructure/cdk"
+INFRA_DIR="${ROOT_DIR}/backend/infrastructure/cdk"
 
 AWS_PROFILE="${AWS_PROFILE:-}"
 AWS_REGION="${AWS_REGION:-}"
@@ -52,7 +52,8 @@ echo "Deploying stack to ${AWS_REGION} with profile ${AWS_PROFILE}..."
 pushd "${INFRA_DIR}" >/dev/null
 npm install
 
-AWS_PROFILE="${AWS_PROFILE}" AWS_REGION="${AWS_REGION}" npx cdk bootstrap "aws://${AWS_PROFILE}/${AWS_REGION}" || true
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+AWS_PROFILE="${AWS_PROFILE}" AWS_REGION="${AWS_REGION}" npx cdk bootstrap "aws://${AWS_ACCOUNT_ID}/${AWS_REGION}" || true
 
 AWS_PROFILE="${AWS_PROFILE}" AWS_REGION="${AWS_REGION}" npx cdk deploy --require-approval never \
   --parameters WebCrawlSeedUrls="${WEB_CRAWL_SEED_URLS}" \
