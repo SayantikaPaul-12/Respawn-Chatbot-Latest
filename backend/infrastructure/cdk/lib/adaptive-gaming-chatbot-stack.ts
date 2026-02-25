@@ -110,20 +110,10 @@ export class AdaptiveGamingChatbotStack extends Stack {
       )
     });
 
-    const amplifyRepo = new CfnParameter(this, "AmplifyRepository", {
-      type: "String",
-      description: "Git repository URL for Amplify (e.g., https://github.com/org/repo)."
-    });
-    const amplifyOauthToken = new CfnParameter(this, "AmplifyOauthToken", {
-      type: "String",
-      noEcho: true,
-      description: "OAuth token for Amplify to access the repository."
-    });
-    const amplifyBranchName = new CfnParameter(this, "AmplifyBranch", {
-      type: "String",
-      default: "main",
-      description: "Git branch name for Amplify builds."
-    });
+    // Read Amplify config from CDK context (passed via -c flags in buildspec)
+    const amplifyRepo = this.node.tryGetContext("amplifyRepository") as string;
+    const amplifyOauthToken = this.node.tryGetContext("amplifyOauthToken") as string;
+    const amplifyBranchName = this.node.tryGetContext("amplifyBranch") as string ?? "main";
 
     const amplifyRole = new iam.Role(this, "AmplifyServiceRole", {
       assumedBy: new iam.ServicePrincipal("amplify.amazonaws.com")
@@ -134,8 +124,8 @@ export class AdaptiveGamingChatbotStack extends Stack {
 
     const amplifyApp = new amplify.CfnApp(this, "AdaptiveGamingAmplifyApp", {
       name: "adaptive-gaming-guide",
-      repository: amplifyRepo.valueAsString,
-      oauthToken: amplifyOauthToken.valueAsString,
+      repository: amplifyRepo,
+      oauthToken: amplifyOauthToken,
       platform: "WEB",
       iamServiceRole: amplifyRole.roleArn,
       environmentVariables: [
@@ -148,7 +138,7 @@ export class AdaptiveGamingChatbotStack extends Stack {
 
     new amplify.CfnBranch(this, "AdaptiveGamingAmplifyBranch", {
       appId: amplifyApp.attrAppId,
-      branchName: amplifyBranchName.valueAsString,
+      branchName: amplifyBranchName,
       enableAutoBuild: true
     });
 
